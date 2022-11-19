@@ -1,0 +1,85 @@
+---
+title: "Jessica Braudo ex4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Exploring the count tables
+
+Here, import an example count table and do some exploration of the expression data. 
+
+```{r exSetup1, eval=FALSE}
+counts_file <- system.file("extdata/rna-seq/SRP029880.raw_counts.tsv",
+                           package = "compGenomRData")
+coldata_file <- system.file("extdata/rna-seq/SRP029880.colData.tsv", 
+                            package = "compGenomRData")
+```
+
+1. Normalize the counts using the TPM approach. 
+
+```{r}
+counts_file <- system.file("extdata/rna-seq/SRP029880.raw_counts.tsv",
+                           package = "compGenomRData")
+coldata_file <- system.file("extdata/rna-seq/SRP029880.colData.tsv", 
+                            package = "compGenomRData")
+counts <- as.matrix(read.table(counts_file, header = T, sep = '\t'))
+geneLengths <- as.vector(subset(counts, select = c(width)))
+rpk <- apply( subset(counts, select = c(-width)), 2,
+              function(x) x/(geneLengths/1000))
+tpm <- apply(rpk, 2, function(x) x / sum(as.numeric(x)) * 10^6)
+# making sure:
+colSums(tpm)
+```
+2. Plot a heatmap of the top 500 most variable genes. Compare with the heatmap obtained using the 100 most variable genes. Hint : use var() function to compute the variance. 
+
+```{r}
+V <- apply(tpm, 1, var)
+selectedGenes_100 <- names(V[order(V, decreasing = T)][1:100])
+selectedGenes_500 <- names(V[order(V, decreasing = T)][1:500])
+
+library(pheatmap)
+
+colData <- read.table(coldata_file, header = T, sep = '\t',
+                      stringsAsFactors = TRUE)
+pheatmap(tpm[selectedGenes_100,], scale = 'row',
+         show_rownames = FALSE,
+         annotation_col = colData)
+pheatmap(tpm[selectedGenes_500,], scale = 'row',
+         show_rownames = FALSE,
+         annotation_col = colData)
+```
+
+3. Re-do the heatmaps setting the `scale` argument to `none`, and `column`. Compare the results with `scale = 'row'`.
+```{r}
+pheatmap(tpm[selectedGenes_100,], scale = 'none',
+         show_rownames = FALSE,
+         annotation_col = colData)
+pheatmap(tpm[selectedGenes_500,], scale = 'none',
+         show_rownames = FALSE,
+         annotation_col = colData)
+pheatmap(tpm[selectedGenes_100,], scale = 'column',
+         show_rownames = FALSE,
+         annotation_col = colData)
+pheatmap(tpm[selectedGenes_500,], scale = 'column',
+         show_rownames = FALSE,
+         annotation_col = colData)
+```
+
+4. Draw a correlation plot for the samples depicting the sample differences as 'ellipses', drawing only the upper end of the matrix, and order samples by hierarchical clustering results based on `average` linkage clustering method. 
+
+```{r}
+library(corrplot)
+correlationMatrix <- cor(tpm)
+corrplot(correlationMatrix, method = "ellipse", order = "hclust", type = "upper")
+```
+### Git and Github
+
+5. Open Github account, and install git if it required as instructed in the following link: https://github.com/llendway/github_for_collaboration/blob/master/github_for_collaboration.md
+
+6. Create a repository and commit and push the answers of this exercise through Rtudio (Please upload the answers to the exercises also to Moodle).
+
+7. Insert the link to your Github account here.
+https://github.com/jessyno1/Genomic-Data-Science
